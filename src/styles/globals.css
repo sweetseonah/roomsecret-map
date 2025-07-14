@@ -1,0 +1,243 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-size: 14px;
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  
+  /* 브랜드 프라이머리 색상 - 인디고 계열 */
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --primary-50: #eef2ff;
+  --primary-100: #e0e7ff;
+  --primary-500: #6366f1;
+  --primary-600: #4f46e5;
+  --primary-700: #4338ca;
+  --primary-800: #3730a3;
+  --primary-900: #312e81;
+  
+  /* 보조 색상 - 슬레이트 계열 */
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --secondary-500: #64748b;
+  --secondary-600: #475569;
+  --secondary-700: #334155;
+  
+  /* 액센트 색상 - 앰버 계열 (할인/특가용) */
+  --accent: #fef3c7;
+  --accent-foreground: #92400e;
+  --accent-500: #f59e0b;
+  --accent-600: #d97706;
+  
+  /* 성공 색상 - 에메랄드 계열 */
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --success-50: #ecfdf5;
+  --success-100: #d1fae5;
+  --success-500: #10b981;
+  --success-600: #059669;
+  
+  /* 위험/오류 색상 */
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  
+  /* 기본 UI 색상 */
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f8fafc;
+  --switch-background: #cbd5e1;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: oklch(0.708 0 0);
+  
+  /* 차트 색상 */
+  --chart-1: var(--primary-500);
+  --chart-2: var(--success-500);
+  --chart-3: var(--accent-500);
+  --chart-4: var(--secondary-500);
+  --chart-5: #8b5cf6;
+  
+  --radius: 0.625rem;
+  
+  /* 사이드바 색상 */
+  --sidebar: #f8fafc;
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #334155;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: var(--ring);
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
+  
+  /* 다크모드 프라이머리 */
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --primary-50: #312e81;
+  --primary-100: #3730a3;
+  --primary-500: #6366f1;
+  --primary-600: #6366f1;
+  --primary-700: #818cf8;
+  --primary-800: #a5b4fc;
+  --primary-900: #c7d2fe;
+  
+  /* 다크모드 보조 색상 */
+  --secondary: #334155;
+  --secondary-foreground: #f8fafc;
+  --secondary-500: #64748b;
+  --secondary-600: #475569;
+  --secondary-700: #334155;
+  
+  /* 다크모드 액센트 */
+  --accent: #451a03;
+  --accent-foreground: #fbbf24;
+  --accent-500: #f59e0b;
+  --accent-600: #d97706;
+  
+  /* 다크모드 성공 */
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --success-50: #064e3b;
+  --success-100: #065f46;
+  --success-500: #10b981;
+  --success-600: #059669;
+  
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --muted: #334155;
+  --muted-foreground: #94a3b8;
+  --border: #334155;
+  --input: #334155;
+  --input-background: #1e293b;
+  --ring: #6366f1;
+  
+  --sidebar: #1e293b;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: #334155;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #334155;
+  --sidebar-ring: var(--ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  html {
+    font-size: var(--font-size);
+  }
+}
+
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: 1.5rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: 1rem;
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: 1rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: 1rem;
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: 1rem;
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
+}
+
+/* 커스텀 유틸리티 클래스 */
+@layer utilities {
+  .text-primary-500 {
+    color: var(--primary-500);
+  }
+  
+  .text-primary-600 {
+    color: var(--primary-600);
+  }
+  
+  .bg-primary-500 {
+    background-color: var(--primary-500);
+  }
+  
+  .bg-primary-600 {
+    background-color: var(--primary-600);
+  }
+  
+  .text-success-500 {
+    color: var(--success-500);
+  }
+  
+  .bg-success-500 {
+    background-color: var(--success-500);
+  }
+  
+  .text-accent-500 {
+    color: var(--accent-500);
+  }
+  
+  .bg-accent-500 {
+    background-color: var(--accent-500);
+  }
+  
+  .border-primary-500 {
+    border-color: var(--primary-500);
+  }
+}
