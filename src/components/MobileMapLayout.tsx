@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MapPin } from 'lucide-react';
-import { MapView } from './MapView';
+import MapView from './MapView';
 import { BottomSheet } from './BottomSheet';
 import { SearchFilters } from './SearchFilters';
 import { Badge } from './ui/badge';
@@ -16,6 +16,7 @@ interface MobileMapLayoutProps {
   onMotelClick: (id: string) => void;
   onMarkerClick: (id: string) => void;
   selectedMotelId: string | null;
+  clickedMotelId?: string | null;
   showFilters: boolean;
   onFiltersToggle: () => void;
 }
@@ -26,6 +27,7 @@ export function MobileMapLayout({
   onMotelClick,
   onMarkerClick,
   selectedMotelId,
+  clickedMotelId,
   showFilters,
   onFiltersToggle
 }: MobileMapLayoutProps) {
@@ -34,6 +36,11 @@ export function MobileMapLayout({
   const [currentSnap, setCurrentSnap] = useState(0); // 가장 낮은 높이에서 시작
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+
+  // 클릭된 모텔이 있는 경우 해당 모텔만 표시
+  const displayMotels = clickedMotelId 
+    ? motels.filter(motel => motel.id === clickedMotelId)
+    : motels;
 
   // 선택된 모텔이 있을 때 자동으로 바텀시트 중간 높이로 열기
   useEffect(() => {
@@ -71,10 +78,8 @@ export function MobileMapLayout({
       {/* 지도 - 전체 화면 */}
       <div className="absolute inset-0">
         <MapView
-          markers={markers}
+          markersData={markers}
           onMarkerClick={onMarkerClick}
-          isMobile={true}
-          selectedMotelId={selectedMotelId}
         />
       </div>
 
@@ -83,7 +88,7 @@ export function MobileMapLayout({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Badge variant="secondary" className="bg-white shadow-sm">
-              숙소 {motels.length}개
+              숙소 {displayMotels.length}개
             </Badge>
             {showFilters && (
               <Badge variant="outline" className="bg-white shadow-sm">
@@ -121,7 +126,7 @@ export function MobileMapLayout({
           <div className="flex-shrink-0 px-4 py-3 border-b border-gray-100">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">
-                근처 숙소 {motels.length}개
+                근처 숙소 {displayMotels.length}개
               </h2>
               <div className="flex items-center space-x-2">
                 <button
@@ -136,7 +141,7 @@ export function MobileMapLayout({
             {/* 필터 섹션 */}
             {showFilters && (
               <div className="mb-3">
-                <SearchFilters onFiltersToggle={onFiltersToggle} />
+                <SearchFilters isOpen={showFilters} onClose={onFiltersToggle} />
               </div>
             )}
           </div>
@@ -155,13 +160,15 @@ export function MobileMapLayout({
 
             {/* 모텔 리스트 */}
             <div className="space-y-3">
-              {motels.map((motel) => (
+              {displayMotels.map((motel) => (
                 <div key={motel.id} className="w-full">
                   <MotelCard
                     motel={motel}
                     onClick={() => onMotelClick(motel.id)}
                     isFavorite={favorites.has(motel.id)}
-                    onToggleFavorite={(event) => toggleFavorite(motel.id, event)}
+                    onToggleFavorite={(event: React.MouseEvent) => toggleFavorite(motel.id, event)}
+                    isSelected={selectedMotelId === motel.id}
+                    isHovered={clickedMotelId === motel.id}
                     isMobile={true} // 모바일 모드로 설정
                   />
                 </div>

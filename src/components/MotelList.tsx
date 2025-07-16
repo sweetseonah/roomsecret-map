@@ -34,11 +34,13 @@ interface Motel {
 interface MotelListProps {
   motels: Motel[];
   onMotelClick: (id: string) => void;
+  selectedMotelId?: string | null;
+  clickedMotelId?: string | null;
   showFilters: boolean;
   onFiltersToggle: () => void;
 }
 
-export function MotelList({ motels, onMotelClick, showFilters, onFiltersToggle }: MotelListProps) {
+export function MotelList({ motels, onMotelClick, selectedMotelId, clickedMotelId, showFilters, onFiltersToggle }: MotelListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('recommended');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -76,6 +78,11 @@ export function MotelList({ motels, onMotelClick, showFilters, onFiltersToggle }
         return b.isRecommended ? 1 : -1;
     }
   });
+
+  // 클릭된 모텔이 있는 경우 해당 모텔만 표시
+  const displayMotels = clickedMotelId 
+    ? sortedMotels.filter(motel => motel.id === clickedMotelId)
+    : sortedMotels;
 
   return (
     <div className="space-y-6">
@@ -130,7 +137,7 @@ export function MotelList({ motels, onMotelClick, showFilters, onFiltersToggle }
       {/* Filters Panel */}
       {showFilters && (
         <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 -mx-6 mx-6">
-          <SearchFilters onFiltersChange={(filters) => console.log('Filters changed:', filters)} />
+          <SearchFilters />
         </div>
       )}
 
@@ -142,19 +149,21 @@ export function MotelList({ motels, onMotelClick, showFilters, onFiltersToggle }
 
       {/* Motels Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {sortedMotels.map((motel) => (
+        {displayMotels.map((motel) => (
           <MotelCard
             key={motel.id}
             motel={motel}
             onClick={() => onMotelClick(motel.id)}
             isFavorite={favorites.has(motel.id)}
             onToggleFavorite={(event) => toggleFavorite(motel.id, event)}
+            isSelected={selectedMotelId === motel.id}
+            isHovered={clickedMotelId === motel.id}
           />
         ))}
       </div>
 
       {/* No Results */}
-      {sortedMotels.length === 0 && (
+      {displayMotels.length === 0 && (
         <div className="text-center py-12">
           <div className="text-gray-500 mb-4">
             <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -172,10 +181,10 @@ export function MotelList({ motels, onMotelClick, showFilters, onFiltersToggle }
       )}
 
       {/* Load More */}
-      {sortedMotels.length > 0 && (
+      {displayMotels.length > 0 && (
         <div className="text-center py-8">
           <p className="text-sm text-gray-600">
-            {sortedMotels.length}개 숙소 중 {Math.min(sortedMotels.length, 20)}개 표시됨
+            {displayMotels.length}개 숙소 중 {Math.min(displayMotels.length, 20)}개 표시됨
           </p>
         </div>
       )}

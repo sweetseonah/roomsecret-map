@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Header } from "../components/Header";
 import { MotelList } from "../components/MotelList";
-import { MapView } from "../components/MapView";
+import MapView from "../components/MapView";
 import { TabNavigation } from "../components/TabNavigation";
 import { MotelDetail } from "../components/MotelDetail";
 import { BookingConfirmation } from "../components/BookingConfirmation";
@@ -11,6 +11,9 @@ import { LoginModal } from "../components/LoginModal";
 import { MobileMapLayout } from "../components/MobileMapLayout";
 import { ReviewsPage } from "../components/ReviewsPage";
 import { Toaster } from "../components/ui/sonner";
+
+// Import API types
+import { AllFranchiseResult, AllFranchise } from "../types/apis/franchise/location";
 
 // Mock review data
 const mockReviews = [
@@ -105,8 +108,53 @@ const mockMarkers = mockMotels.map((motel, index) => ({
   lng: 126.978 + index * 0.01,
 }));
 
-export default function App() {
+// Custom hook for stable media query detection
+function useMedia(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    
+    // Set initial value
+    setMatches(media.matches);
+    
+    // Create a stable listener that doesn't cause rapid updates
+    const listener = (e: MediaQueryListEvent) => {
+      setMatches(e.matches);
+    };
+    
+    // Use addEventListener for better compatibility
+    if (media.addEventListener) {
+      media.addEventListener('change', listener);
+    } else {
+      // Fallback for older browsers
+      media.addListener(listener);
+    }
+    
+    return () => {
+      if (media.removeEventListener) {
+        media.removeEventListener('change', listener);
+      } else {
+        media.removeListener(listener);
+      }
+    };
+  }, [query]);
+
+  return matches;
+}
+
+export default function HomePage() {
+  // Use stable media query hook instead of window resize listener
+  const isMobile = useMedia('(max-width: 1023px)');
+  
+  // API 데이터 상태
+  const [apiData, setApiData] = useState<AllFranchiseResult>({
+    result: [],
+    total: '0'
+  });
+  
   const [selectedMotelId, setSelectedMotelId] = useState<string | null>(null);
+  const [clickedMotelId, setClickedMotelId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'detail' | 'booking' | 'reviews'>('list');
@@ -114,6 +162,86 @@ export default function App() {
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // API 데이터를 모텔 데이터 구조로 변환하는 함수
+  const convertApiDataToMotels = useCallback((apiResult: AllFranchiseResult) => {
+    return apiResult.result.map((franchise: AllFranchise, index: number) => ({
+      id: franchise.idx || franchise.id || index.toString(),
+      name: franchise.company_name || '숙소명 없음',
+      category: '모텔',
+      distance: franchise.distance ? `${parseFloat(franchise.distance).toFixed(1)}km` : '거리 정보 없음',
+      location: franchise.company_address || '주소 정보 없음',
+      rating: 4.0 + Math.random() * 1, // 임시 평점
+      reviewCount: Math.floor(Math.random() * 200) + 10, // 임시 리뷰 수
+      price: Math.floor(Math.random() * 100000) + 50000, // 임시 가격
+      originalPrice: Math.floor(Math.random() * 150000) + 100000, // 임시 원가
+      isRecommended: Math.random() > 0.7,
+      amenities: ['wifi', 'parking'],
+      isAvailable: (franchise as any).status === '활성',
+      imageUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=400&fit=crop',
+      address: franchise.company_address || '주소 정보 없음',
+      phone: franchise.company_tel || '전화번호 없음',
+      checkInTime: '15:00',
+      checkOutTime: '11:00',
+      host: {
+        name: 'Host',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face',
+        isHost: true
+      },
+      images: [
+        'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=400&h=400&fit=crop'
+      ],
+      reviews: mockReviews,
+      rooms: [
+        {
+          id: `room-${franchise.idx || index}`,
+          name: '스탠다드룸',
+          description: '편안한 휴식을 위한 기본 객실',
+          roomType: '더블 침대 1개',
+          maxGuests: 2,
+          standardGuests: 2,
+          bedType: '더블 침대 1개',
+          size: '20㎡',
+          hourlyRate: Math.floor(Math.random() * 50000) + 30000,
+          originalHourlyRate: Math.floor(Math.random() * 70000) + 50000,
+          overnightRate: Math.floor(Math.random() * 30000) + 20000,
+          amenities: ['wifi', 'parking'],
+          availableRooms: Math.floor(Math.random() * 5) + 1,
+          isTimeSale: Math.random() > 0.5,
+          cancellationPolicy: '무료취소 가능',
+          checkInTime: '15:00',
+          checkOutTime: '11:00',
+          breakfast: {
+            included: false,
+            price: 10000,
+            description: '조식 불포함'
+          },
+          roomFeatures: ['시티뷰'],
+          images: ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop'],
+          additionalInfo: '기준 2인',
+          facilities: ['기준정보']
+        }
+      ]
+    }));
+  }, []);
+
+  // MapView에서 API 데이터를 받는 핸들러
+  const handleApiDataChange = useCallback((data: AllFranchiseResult) => {
+    setApiData(data);
+  }, []);
+
+  // 변환된 모텔 데이터
+  const motels = convertApiDataToMotels(apiData);
+
+  // API 데이터를 기반으로 한 마커 데이터
+  const markers = apiData.result.map((franchise: AllFranchise) => ({
+    id: franchise.idx || franchise.id,
+    name: franchise.company_name,
+    price: Math.floor(Math.random() * 100000) + 50000, // 임시 가격
+    lat: franchise.geo_lat ? parseFloat(franchise.geo_lat) : 37.5665,
+    lng: franchise.geo_lng ? parseFloat(franchise.geo_lng) : 126.978,
+  }));
 
   const handleMotelClick = (id: string) => {
     setSelectedMotelId(id);
@@ -138,7 +266,8 @@ export default function App() {
   };
 
   const handleMarkerClick = (id: string) => {
-    setSelectedMotelId(id);
+    // 이미 클릭된 모텔이면 필터 해제, 아니면 해당 모텔로 필터링
+    setClickedMotelId(prevId => prevId === id ? null : id);
   };
 
   const handleFiltersToggle = () => {
@@ -172,12 +301,13 @@ export default function App() {
     setIsLoginModalOpen(true);
   };
 
-  const markersWithSelection = mockMarkers.map(marker => ({
+  const markersWithSelection = markers.map(marker => ({
     ...marker,
-    isSelected: marker.id === selectedMotelId
+    isSelected: marker.id === selectedMotelId,
+    isClicked: marker.id === clickedMotelId
   }));
 
-  const selectedMotel = mockMotels.find(motel => motel.id === selectedMotelId);
+  const selectedMotel = motels.find(motel => motel.id === selectedMotelId);
 
   if (viewMode === "reviews" && selectedMotel) {
     return (
@@ -227,46 +357,49 @@ export default function App() {
       />
 
       <main className="flex-1 overflow-hidden">
-        {/* Mobile Layout */}
-        <div className="lg:hidden h-[calc(100vh-64px)]">
-          <MobileMapLayout
-            motels={mockMotels}
-            markers={markersWithSelection}
-            onMotelClick={handleMotelClick}
-            onMarkerClick={handleMarkerClick}
-            selectedMotelId={selectedMotelId}
-            showFilters={showFilters}
-            onFiltersToggle={handleFiltersToggle}
-          />
-        </div>
-
-        {/* Desktop Layout - Full Width */}
-        <div className="hidden lg:flex h-[calc(100vh-64px)]">
-          {/* Left Panel - Fixed Width */}
-          <div className="w-[580px] flex-shrink-0 overflow-auto bg-background border-r border-gray-200">
-            <div className="p-6">
-              <MotelList
-                motels={mockMotels}
-                onMotelClick={handleMotelClick}
-                showFilters={showFilters}
-                onFiltersToggle={handleFiltersToggle}
-              />
-            </div>
-          </div>
-
-          {/* Right Panel - Full Remaining Width */}
-          <div className="flex-1 relative">
-            <MapView
+        {isMobile ? (
+          /* Mobile Layout - 조건부 렌더링 */
+          <div className="h-[calc(100vh-64px)]">
+            <MobileMapLayout
+              motels={motels}
               markers={markersWithSelection}
+              onMotelClick={handleMotelClick}
               onMarkerClick={handleMarkerClick}
-              isExpanded={isMapExpanded}
-              onToggleExpand={() =>
-                setIsMapExpanded(!isMapExpanded)
-              }
               selectedMotelId={selectedMotelId}
+              clickedMotelId={clickedMotelId}
+              showFilters={showFilters}
+              onFiltersToggle={handleFiltersToggle}
             />
           </div>
-        </div>
+        ) : (
+          /* Desktop Layout - 조건부 렌더링 */
+          <div className="flex h-[calc(100vh-64px)]">
+            {/* Left Panel - Fixed Width */}
+            <div className="w-[580px] flex-shrink-0 overflow-auto bg-background border-r border-gray-200">
+              <div className="p-6">
+                <MotelList
+                  motels={motels}
+                  onMotelClick={handleMotelClick}
+                  selectedMotelId={selectedMotelId}
+                  clickedMotelId={clickedMotelId}
+                  showFilters={showFilters}
+                  onFiltersToggle={handleFiltersToggle}
+                />
+              </div>
+            </div>
+
+            {/* Right Panel - Full Remaining Width */}
+            <div className="flex-1 relative h-full">
+              <div className="w-full h-full">
+                <MapView 
+                  onDataChange={handleApiDataChange} 
+                  markersData={markersWithSelection}
+                  onMarkerClick={handleMarkerClick}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <LoginModal
