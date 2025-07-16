@@ -12,7 +12,7 @@ interface MotelCardProps {
   onClick: () => void;
 }
 
-export default function MotelCard({
+export function MotelCard({
   id,
   name,
   location,
@@ -59,15 +59,15 @@ export default function MotelCard({
           </div>
           
           <div className="text-right">
-            {discount && (
+            {discount && price && (
               <p className="text-muted-foreground text-sm line-through">
                 {price.toLocaleString()}원
               </p>
             )}
             <p className="text-primary-600 font-medium">
-              {discount 
+              {price && discount 
                 ? Math.floor(price * (1 - discount / 100)).toLocaleString()
-                : price.toLocaleString()
+                : price?.toLocaleString() || '0'
               }원
             </p>
           </div>

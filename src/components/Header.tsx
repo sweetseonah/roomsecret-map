@@ -1,100 +1,112 @@
-'use client';
+import { useState } from 'react';
+import { Search, User, Heart, Menu } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { SearchModal } from './SearchModal';
 
-import { useState, useEffect } from 'react';
-import { Search, Menu, Heart, User, Sun, Moon } from 'lucide-react';
+interface HeaderProps {
+  onMotelSelect?: (motelId: string) => void;
+  onLoginClick?: () => void;
+}
 
-export default function Header() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+export function Header({ onMotelSelect, onLoginClick }: HeaderProps = {}) {
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 0);
-    };
+  const handleSearchClick = () => {
+    setIsSearchModalOpen(true);
+  };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    // 페이지 로드 시 다크 모드 상태 확인
-    const isDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+  const handleLoginClick = () => {
+    if (onLoginClick) {
+      onLoginClick();
     }
   };
 
   return (
-    <header className={`sticky top-0 z-50 transition-all duration-300 ${
-      isScrolled 
-        ? 'bg-card/80 backdrop-blur-sm border-b border-border' 
-        : 'bg-transparent'
-    }`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* 로고 */}
-          <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold text-primary-600">
-              RoomSecret
-            </h1>
-            <span className="text-lg text-foreground">Map</span>
+    <>
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14 sm:h-16">
+            {/* Logo */}
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <span className="text-xl sm:text-2xl font-bold text-primary-600 bg-clip-text">NODA</span>
+              </div>
+            </div>
+
+            {/* Search Bar - Hidden on mobile, shown on desktop */}
+            <div className="hidden md:flex flex-1 max-w-lg mx-8">
+              <div className="relative w-full">
+                <Input
+                  type="text"
+                  placeholder="지역, 지하철역, 모텔명"
+                  className="pl-4 pr-12 py-2 w-full border-gray-300 rounded-full focus:border-primary-500 focus:ring-primary-500 cursor-pointer"
+                  onClick={handleSearchClick}
+                  readOnly
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <Button 
+                    size="sm" 
+                    className="bg-primary-600 hover:bg-primary-700 rounded-full px-4"
+                    onClick={handleSearchClick}
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right side buttons */}
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <Button variant="ghost" size="sm" className="hidden sm:flex items-center space-x-2 hover:bg-primary-50 hover:text-primary-700">
+                <Heart className="h-4 w-4" />
+                <span className="hidden md:inline">찜</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex items-center space-x-2 hover:bg-primary-50 hover:text-primary-700"
+                onClick={handleLoginClick}
+              >
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">로그인</span>
+              </Button>
+              <Button variant="ghost" size="sm" className="md:hidden">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
-          {/* 네비게이션 */}
-          <nav className="hidden md:flex items-center space-x-6">
-            <a href="#" className="text-foreground hover:text-primary-600 transition-colors">
-              숙소
-            </a>
-            <a href="#" className="text-foreground hover:text-primary-600 transition-colors">
-              체험
-            </a>
-            <a href="#" className="text-foreground hover:text-primary-600 transition-colors">
-              이벤트
-            </a>
-          </nav>
-
-          {/* 우측 버튼들 */}
-          <div className="flex items-center space-x-4">
-            {/* 검색 버튼 */}
-            <button className="p-2 rounded-full hover:bg-muted transition-colors">
-              <Search className="h-5 w-5 text-foreground" />
-            </button>
-
-            {/* 다크 모드 토글 */}
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-full hover:bg-muted transition-colors"
-              aria-label="다크 모드 토글"
-            >
-              {isDarkMode ? (
-                <Sun className="h-5 w-5 text-foreground" />
-              ) : (
-                <Moon className="h-5 w-5 text-foreground" />
-              )}
-            </button>
-
-            {/* 위시리스트 */}
-            <button className="p-2 rounded-full hover:bg-muted transition-colors">
-              <Heart className="h-5 w-5 text-foreground" />
-            </button>
-
-            {/* 사용자 메뉴 */}
-            <button className="flex items-center space-x-2 p-2 rounded-full border border-border hover:bg-muted transition-colors">
-              <Menu className="h-4 w-4 text-foreground" />
-              <User className="h-5 w-5 text-foreground" />
-            </button>
+          {/* Mobile Search Bar */}
+          <div className="md:hidden pb-3">
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="지역, 지하철역, 모텔명"
+                className="pl-4 pr-10 py-2 w-full border-gray-300 rounded-full text-sm focus:border-primary-500 focus:ring-primary-500 cursor-pointer"
+                onClick={handleSearchClick}
+                readOnly
+              />
+              <div className="absolute inset-y-0 right-0 pr-2 flex items-center">
+                <Button 
+                  size="sm" 
+                  className="bg-primary-600 hover:bg-primary-700 rounded-full px-3 h-8"
+                  onClick={handleSearchClick}
+                >
+                  <Search className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Search Modal */}
+      <SearchModal 
+        isOpen={isSearchModalOpen} 
+        onClose={() => setIsSearchModalOpen(false)}
+        onMotelSelect={onMotelSelect}
+      />
+    </>
   );
 }

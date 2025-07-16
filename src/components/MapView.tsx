@@ -1,4 +1,6 @@
-import { useState } from 'react';
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
 import { MapPin, Maximize2, Minimize2, Navigation } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -30,87 +32,152 @@ export function MapView({
   selectedMotelId 
 }: MapViewProps) {
   const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
 
-  const mapHeight = isMobile ? 'h-full' : isExpanded ? 'h-screen' : 'h-64 md:h-96';
+  const mapHeight = isMobile ? 'h-full' : isExpanded ? 'h-screen' : 'h-screen';
+
+  // 클라이언트 마운트 감지
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient || !mapRef.current || !window.kakao || !window.kakao.maps) return;
+
+    // 카카오 지도 API가 완전히 로드된 후 지도 초기화
+    window.kakao.maps.load(() => {
+      if (!mapRef.current) return;
+
+      // 카카오 지도 초기화
+      const options = {
+        center: new window.kakao.maps.LatLng(37.5665, 126.9780), // 서울 시청 좌표
+        level: 5
+      };
+
+      const map = new window.kakao.maps.Map(mapRef.current, options);
+      mapInstanceRef.current = map;
+
+      // 기존 마커들 제거
+      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current = [];
+
+      // 새 마커들 추가
+      markers.forEach((markerData) => {
+        const position = new window.kakao.maps.LatLng(markerData.lat, markerData.lng);
+        
+        // 커스텀 오버레이 생성
+        const content = `
+          <div class="custom-marker ${markerData.id === selectedMotelId ? 'selected' : ''}" 
+               style="position: relative; cursor: pointer;">
+            <div style="
+              background: ${markerData.id === selectedMotelId ? '#3b82f6' : 'white'};
+              color: ${markerData.id === selectedMotelId ? 'white' : '#374151'};
+              padding: 4px 8px;
+              border-radius: 9999px;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+              border: 1px solid ${markerData.id === selectedMotelId ? '#2563eb' : '#d1d5db'};
+              font-size: 12px;
+              font-weight: 600;
+              white-space: nowrap;
+              transform: ${markerData.id === selectedMotelId ? 'scale(1.1)' : 'scale(1)'};
+              transition: all 0.2s ease;
+            ">
+              ₩${(markerData.price / 1000).toFixed(0)}k
+            </div>
+            <div style="
+              position: absolute;
+              top: 100%;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 0;
+              height: 0;
+              border-left: 4px solid transparent;
+              border-right: 4px solid transparent;
+              border-top: 6px solid ${markerData.id === selectedMotelId ? '#3b82f6' : 'white'};
+            "></div>
+          </div>
+        `;
+
+        const customOverlay = new window.kakao.maps.CustomOverlay({
+          position: position,
+          content: content,
+          yAnchor: 1
+        });
+
+        customOverlay.setMap(map);
+        markersRef.current.push(customOverlay);
+
+        // 클릭 이벤트 추가
+        const overlayElement = customOverlay.getContent();
+        if (overlayElement) {
+          overlayElement.addEventListener('click', () => {
+            onMarkerClick(markerData.id);
+          });
+        }
+      });
+
+      // 마커들이 모두 보이도록 지도 범위 조정
+      if (markers.length > 0) {
+        const bounds = new window.kakao.maps.LatLngBounds();
+        markers.forEach(marker => {
+          bounds.extend(new window.kakao.maps.LatLng(marker.lat, marker.lng));
+        });
+        map.setBounds(bounds);
+      }
+    });
+  }, [markers, selectedMotelId, onMarkerClick]);
 
   return (
-    <Card className={`relative bg-gradient-to-br from-slate-50 to-primary-50 transition-all duration-300 ${mapHeight}`}>
-      {/* Map placeholder */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-primary-100 rounded-lg">
-        {/* Simulated map markers */}
-        <div className="relative w-full h-full overflow-hidden rounded-lg">
-          {markers.map((marker, index) => {
-            const isSelected = marker.isSelected || marker.id === selectedMotelId;
-            return (
-              <div
-                key={marker.id}
-                className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 touch-manipulation"
-                style={{
-                  left: `${30 + (index * 15) % 60}%`,
-                  top: `${40 + (index * 10) % 40}%`,
-                }}
-                onMouseEnter={() => setHoveredMarker(marker.id)}
-                onMouseLeave={() => setHoveredMarker(null)}
-                onClick={() => onMarkerClick(marker.id)}
-              >
-                {/* Price marker */}
-                <div className={`relative ${
-                  isSelected ? 'z-20' : 'z-10'
-                }`}>
-                  <div className={`
-                    px-2 sm:px-3 py-1 rounded-full shadow-lg transition-all duration-200 min-h-[32px] flex items-center border
-                    ${isSelected 
-                      ? 'bg-primary-600 text-white scale-110 border-primary-700' 
-                      : 'bg-white text-gray-900 hover:scale-105 active:scale-95 hover:bg-primary-50 hover:border-primary-300 border-gray-200'
-                    }
-                    ${hoveredMarker === marker.id ? 'shadow-xl' : ''}
-                  `}>
-                    <span className="text-xs sm:text-sm font-semibold whitespace-nowrap">
-                      ₩{(marker.price / 1000).toFixed(0)}k
-                    </span>
-                  </div>
-                  
-                  {/* Marker pin */}
-                  <div className={`
-                    absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0
-                    border-l-4 border-r-4 border-t-6 border-transparent
-                    ${isSelected ? 'border-t-primary-600' : 'border-t-white'}
-                  `} />
-                  
-                  {/* Hover card */}
-                  {hoveredMarker === marker.id && !isMobile && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-30">
-                      <Card className="p-2 whitespace-nowrap shadow-lg border-primary-200">
-                        <p className="font-semibold text-sm">{marker.name}</p>
-                      </Card>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Map overlay text */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <Card className={`relative transition-all duration-300 ${mapHeight}`}>
+      {/* 실제 카카오 지도 */}
+      <div
+        ref={mapRef}
+        className="w-full h-full rounded-lg"
+        style={{ minHeight: '300px' }}
+      />
+      
+      {/* 지도 로딩 중일 때 표시할 플레이스홀더 */}
+      {(!isClient || !window.kakao || !window.kakao.maps) && (
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-primary-100 rounded-lg flex items-center justify-center">
           <div className="text-center text-secondary-500">
             <MapPin className="h-8 sm:h-12 w-8 sm:w-12 mx-auto mb-2 opacity-30" />
-            <p className="text-sm sm:text-lg opacity-50 px-4">지도 영역 (실제 환경에서는 Kakao Map API)</p>
+            <p className="text-sm">지도를 로딩 중입니다...</p>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Map controls */}
       <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex flex-col space-y-2">
         <Button
           variant="secondary"
           size="sm"
+          onClick={() => {
+            if (isClient && navigator.geolocation && mapInstanceRef.current && window.kakao && window.kakao.maps) {
+              navigator.geolocation.getCurrentPosition(
+                (position) => {
+                  const lat = position.coords.latitude;
+                  const lng = position.coords.longitude;
+                  const moveLatLng = new window.kakao.maps.LatLng(lat, lng);
+                  mapInstanceRef.current.setCenter(moveLatLng);
+                  mapInstanceRef.current.setLevel(3);
+                },
+                (error) => {
+                  alert('현재 위치를 가져올 수 없습니다.');
+                }
+              );
+            } else {
+              alert('지도가 아직 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+            }
+          }}
           className="bg-white shadow-lg h-8 w-8 sm:h-10 sm:w-10 p-0 hover:bg-primary-50 hover:text-primary-600"
         >
           <Navigation className="h-4 w-4" />
         </Button>
         
-        {onToggleExpand && !isMobile && (
+        {/* {onToggleExpand && !isMobile && (
           <Button
             variant="secondary"
             size="sm"
@@ -119,7 +186,7 @@ export function MapView({
           >
             {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
-        )}
+        )} */}
       </div>
 
       {/* Results count - 모바일에서는 숨김 */}

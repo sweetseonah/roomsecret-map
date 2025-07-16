@@ -355,7 +355,7 @@ export function BookingConfirmation({
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        motel={motel}
+        onMotelSelect={()=>{}}
       />
     </div>
   );

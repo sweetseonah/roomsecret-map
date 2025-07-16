@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import "../styles/globals.css";
 
 const inter = Inter({
@@ -67,6 +68,10 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+        <Script
+          src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY}&libraries=services,clusterer,drawing`}
+          strategy="afterInteractive"
+        />
         {children}
       </body>
     </html>
